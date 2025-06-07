@@ -144,6 +144,10 @@ def update_graph_visualization(self):
 4. Persistencia de datos
 5. Algoritmos adicionales de sugerencias
 
+
+#Descargar siguientes archivos y tenerlo en carpeta descarga
+https://drive.google.com/drive/folders/17OpalCYsHFPoROtWA2UZqQGenHxQr5Xb?usp=sharing 
+
 ## Contacto
 Desarrollador: MayroGamerosXZ
 Fecha de última actualización: 2025-04-27
