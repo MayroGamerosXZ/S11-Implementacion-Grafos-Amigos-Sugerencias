@@ -1,23 +1,24 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
-import pygame  # Para la reproducción de música
+import pygame  # Para la música 🎵
 
-
-# Clase Graph para manejar la estructura del grafo social
+# ----- Clase que maneja el "cerebro" de la red social -----
 class Graph:
+
     def __init__(self):
-        self.adjacency_list = {}  # Diccionario para almacenar las conexiones
+        # Diccionario que guarda la lista de amigos de cada usuario
+        self.adjacency_list = {}
 
     def add_user(self, user):
-        # Agregar un nuevo usuario si no existe
+        # Añade un nuevo usuario a la red si no existe ya
         if user not in self.adjacency_list:
             self.adjacency_list[user] = set()
             return True
         return False
 
     def add_friendship(self, user1, user2):
-        # Crear una conexión bidireccional entre dos usuarios
+        # Crea una amistad entre dos usuarios (bidireccional)
         if user1 in self.adjacency_list and user2 in self.adjacency_list:
             self.adjacency_list[user1].add(user2)
             self.adjacency_list[user2].add(user1)
@@ -25,20 +26,24 @@ class Graph:
         return False
 
     def get_friends(self, user):
-        # Obtener la lista de amigos de un usuario
+        # Devuelve la lista de amigos directos de un usuario
         if user in self.adjacency_list:
             return list(self.adjacency_list[user])
         return []
 
     def bfs_level_2(self, start_user):
-        # Búsqueda en amplitud para encontrar sugerencias de amistad
+        """
+        Algoritmo BFS para sugerencias de amigos:
+        Devuelve los amigos de amigos (nivel 2), que no son amigos directos
+        """
         if start_user not in self.adjacency_list:
             return set()
 
-        visited = {start_user}
-        level_1 = set(self.adjacency_list[start_user])
-        suggestions = set()
+        visited = {start_user}  # Usuarios ya revisados
+        level_1 = set(self.adjacency_list[start_user])  # Amigos directos
+        suggestions = set()  # Donde se guardan las sugerencias
 
+        # Explora los amigos de los amigos
         for friend in level_1:
             for friend_of_friend in self.adjacency_list[friend]:
                 if friend_of_friend not in visited and friend_of_friend not in level_1:
@@ -46,76 +51,79 @@ class Graph:
 
         return suggestions
 
-
+# ----- Clase que maneja la interfaz gráfica -----
 class SocialNetworkGUI:
+    """
+    Clase que diseña la interfaz gráfica para el usuario.
+    Permite crear usuarios, crear amistades, buscar amigos y ver sugerencias.
+    También muestra el grafo y reproduce música/GIF.
+    """
+
     def __init__(self, root):
+        # Configura la ventana principal
         self.root = root
         self.root.title("Social Network Graph Mayro Gameros")
         self.root.geometry("900x700")
 
-        # Inicializar pygame mixer para la música
+        # Inicializa la música de fondo 🎵
         pygame.mixer.init()
-        self.play_music()  # Iniciar reproducción de música
+        self.play_music()
 
+        # Crea el grafo de la red social
         self.graph = Graph()
-        self.node_positions = {}
-        self.gif_frames = []
+        self.node_positions = {}  # Guarda posiciones de los nodos para el dibujo
+        self.gif_frames = []  # Guarda los fotogramas del GIF
 
-        # Frame principal
+        # Crea el marco principal
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Crear componentes de la interfaz
-        self.create_control_panel()
-        self.create_canvas()
-        self.create_gif_canvas()
-        self.load_background()
+        # Construye la interfaz
+        self.create_control_panel()  # Panel con botones y entradas
+        self.create_canvas()  # Área para visualizar el grafo
+        self.create_gif_canvas()  # Área para la animación GIF
+        self.load_background()  # Carga el GIF animado
 
+    # ----- Música -----
     def play_music(self):
-        # Iniciar reproducción de música
+        """ Carga y reproduce la música en bucle """
         try:
-            pygame.mixer.music.load("C:\\Users\\Usuario\\Downloads\\Adoロックスター.mp3")
-            pygame.mixer.music.play(-1)  # -1 para reproducción en loop
+            pygame.mixer.music.load("C:\\Users\\DELL\\Downloads\\Adoロックスター.mp3")
+            pygame.mixer.music.play(-1)
         except Exception as e:
             print(f"Error al cargar la música: {e}")
 
     def toggle_music(self):
-        # Alternar reproducción/pausa de música
+        """ Permite pausar/reanudar la música """
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.pause()
         else:
             pygame.mixer.music.unpause()
 
+    # ----- Panel de control -----
     def create_control_panel(self):
-        # Panel de control principal
+        """ Crea los botones y entradas para controlar la red social """
         self.control_frame = ttk.LabelFrame(self.main_frame, text="Controles")
         self.control_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
 
-        # Frame para controles de música
+        # Control de música
         music_frame = ttk.LabelFrame(self.control_frame, text="Control de Música")
         music_frame.pack(fill=tk.X, pady=5, padx=5)
 
-        # Controles de música
-        ttk.Button(music_frame, text="Play/Pause",
-                   command=self.toggle_music).pack(side=tk.LEFT, padx=5)
+        ttk.Button(music_frame, text="Play/Pause", command=self.toggle_music).pack(side=tk.LEFT, padx=5)
 
-        # Control de volumen
         self.volume_var = tk.DoubleVar(value=0.5)
-        volume_scale = ttk.Scale(music_frame,
-                                 from_=0, to=1,
-                                 orient=tk.HORIZONTAL,
-                                 variable=self.volume_var,
-                                 command=self.change_volume)
+        volume_scale = ttk.Scale(music_frame, from_=0, to=1, orient=tk.HORIZONTAL,
+                                 variable=self.volume_var, command=self.change_volume)
         volume_scale.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        # Controles de usuario
+        # Entrada para agregar usuario
         ttk.Label(self.control_frame, text="Nombre de usuario:").pack(pady=5)
         self.user_entry = ttk.Entry(self.control_frame)
         self.user_entry.pack(pady=5)
-        ttk.Button(self.control_frame, text="Agregar Usuario",
-                   command=self.add_user).pack(pady=5)
+        ttk.Button(self.control_frame, text="Agregar Usuario", command=self.add_user).pack(pady=5)
 
-        # Controles de amistad
+        # Entradas para crear amistad
         ttk.Label(self.control_frame, text="Usuario 1:").pack(pady=5)
         self.user1_entry = ttk.Entry(self.control_frame)
         self.user1_entry.pack(pady=5)
@@ -124,17 +132,15 @@ class SocialNetworkGUI:
         self.user2_entry = ttk.Entry(self.control_frame)
         self.user2_entry.pack(pady=5)
 
-        ttk.Button(self.control_frame, text="Crear Amistad",
-                   command=self.add_friendship).pack(pady=5)
+        ttk.Button(self.control_frame, text="Crear Amistad", command=self.add_friendship).pack(pady=5)
 
-        # Búsqueda de usuarios
+        # Entrada para buscar usuario
         ttk.Label(self.control_frame, text="Buscar usuario:").pack(pady=5)
         self.search_entry = ttk.Entry(self.control_frame)
         self.search_entry.pack(pady=5)
-        ttk.Button(self.control_frame, text="Buscar",
-                   command=self.search_user).pack(pady=5)
+        ttk.Button(self.control_frame, text="Buscar", command=self.search_user).pack(pady=5)
 
-        # Panel de resultados
+        # Área de resultados
         self.result_frame = ttk.LabelFrame(self.control_frame, text="Resultados")
         self.result_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
@@ -142,19 +148,21 @@ class SocialNetworkGUI:
         self.result_text.pack(pady=5, padx=5)
 
     def change_volume(self, *args):
-        # Ajustar el volumen de la música
+        """ Ajusta el volumen de la música """
         pygame.mixer.music.set_volume(self.volume_var.get())
 
+    # ----- Visualización del grafo -----
     def create_canvas(self):
-        # Canvas para visualización del grafo
+        """ Crea el área donde se dibuja el grafo """
         self.canvas_frame = ttk.LabelFrame(self.main_frame, text="Visualización del Grafo")
         self.canvas_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self.canvas = tk.Canvas(self.canvas_frame, bg='white')
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
+    # ----- Área para el GIF -----
     def create_gif_canvas(self):
-        # Canvas para animación GIF
+        """ Crea el área donde se muestra la animación GIF """
         self.gif_frame = ttk.LabelFrame(self.main_frame, text="Animación")
         self.gif_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False, padx=5, pady=5)
 
@@ -162,16 +170,15 @@ class SocialNetworkGUI:
         self.gif_canvas.pack(fill=tk.BOTH, expand=False)
 
     def load_background(self):
-        # Cargar y configurar el GIF de fondo
+        """ Carga los fotogramas del GIF animado """
         try:
-            gif_path = "C:\\Users\\Usuario\\Downloads\\robin.gif"
+            gif_path = "C:\\Users\\DELL\\Downloads\\robin.gif"
             self.current_frame = 0
 
             gif = Image.open(gif_path)
-
             for frame in range(0, gif.n_frames):
                 gif.seek(frame)
-                frame_resized = gif.resize((1220, 200), Image.Resampling.LANCZOS)
+                frame_resized = gif.resize((1235, 135), Image.Resampling.LANCZOS)
                 frame_image = ImageTk.PhotoImage(frame_resized)
                 self.gif_frames.append(frame_image)
 
@@ -184,21 +191,20 @@ class SocialNetworkGUI:
             self.gif_frames = []
 
     def animate_gif(self):
-        # Animar el GIF
+        """ Anima el GIF (cambia de fotograma automáticamente) """
         if self.gif_frames:
             self.current_frame = (self.current_frame + 1) % len(self.gif_frames)
             self.gif_canvas.itemconfig(self.background_item, image=self.gif_frames[self.current_frame])
             self.root.after(20, self.animate_gif)
 
+    # ----- Actualiza el dibujo del grafo -----
     def update_graph_visualization(self):
-        # Actualizar la visualización del grafo
+        """ Dibuja el grafo actualizado con nodos y conexiones """
         self.canvas.delete("graph")
-
         num_nodes = len(self.graph.adjacency_list)
         if num_nodes == 0:
             return
 
-        # Configuración de visualización
         circle_size = 40
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
@@ -208,10 +214,10 @@ class SocialNetworkGUI:
         effective_width = canvas_width - (2 * margin_x)
         effective_height = canvas_height - (2 * margin_y)
 
-        # Calcular posiciones de nodos
         self.node_positions = {}
         nodes = list(self.graph.adjacency_list.keys())
 
+        # Posicionamiento tipo "cuadrícula"
         for i, node in enumerate(nodes):
             row = i // 4
             col = i % 4
@@ -220,7 +226,7 @@ class SocialNetworkGUI:
 
             self.node_positions[node] = (x, y)
 
-            # Dibujar nodos
+            # Dibuja el nodo
             self.canvas.create_oval(
                 x - circle_size / 2, y - circle_size / 2,
                 x + circle_size / 2, y + circle_size / 2,
@@ -229,7 +235,7 @@ class SocialNetworkGUI:
                 tags="graph"
             )
 
-            # Dibujar etiquetas
+            # Dibuja el nombre del nodo
             self.canvas.create_text(
                 x, y,
                 text=node,
@@ -237,7 +243,7 @@ class SocialNetworkGUI:
                 tags="graph"
             )
 
-        # Dibujar conexiones
+        # Dibuja las conexiones
         for user, friends in self.graph.adjacency_list.items():
             x1, y1 = self.node_positions[user]
             for friend in friends:
@@ -250,8 +256,9 @@ class SocialNetworkGUI:
                         fill="#333333"
                     )
 
+    # ----- Funcionalidad para el usuario -----
     def add_user(self):
-        # Agregar nuevo usuario
+        """ Agrega un nuevo usuario a la red """
         username = self.user_entry.get().strip()
         if username:
             if self.graph.add_user(username):
@@ -264,7 +271,7 @@ class SocialNetworkGUI:
             messagebox.showerror("Error", "Por favor ingrese un nombre de usuario")
 
     def add_friendship(self):
-        # Crear nueva amistad
+        """ Crea una amistad entre dos usuarios """
         user1 = self.user1_entry.get().strip()
         user2 = self.user2_entry.get().strip()
 
@@ -280,7 +287,7 @@ class SocialNetworkGUI:
             messagebox.showerror("Error", "Por favor ingrese ambos usuarios")
 
     def search_user(self):
-        # Buscar usuario y mostrar información
+        """ Muestra los amigos y sugerencias de un usuario """
         username = self.search_entry.get().strip()
         if username in self.graph.adjacency_list:
             friends = self.graph.get_friends(username)
@@ -297,15 +304,16 @@ class SocialNetworkGUI:
         else:
             messagebox.showerror("Error", "Usuario no encontrado")
 
+    # ----- Al cerrar -----
     def __del__(self):
-        # Limpiar recursos al cerrar
+        """ Detiene la música al cerrar la aplicación """
         try:
             pygame.mixer.music.stop()
             pygame.mixer.quit()
         except:
             pass
 
-
+# ----- Main -----
 if __name__ == "__main__":
     root = tk.Tk()
     app = SocialNetworkGUI(root)
